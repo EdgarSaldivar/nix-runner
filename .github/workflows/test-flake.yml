@@ -1,0 +1,52 @@
+name: Test NixOS Flake
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - '**.nix'
+      - 'flake.nix'
+      - 'flake.lock'
+  push:
+    branches: [ main, master ]
+    paths:
+      - '**.nix'
+      - 'flake.nix'
+      - 'flake.lock'
+
+jobs:
+  validate-flake:
+    name: Validate NixOS Flake
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run NixOS Flake Tests
+        uses: ./
+        with:
+          flake-path: '.'
+          config-file: '.nix-runner.yaml'
+          test-timeout: '600'
+          skip-deployment: 'true'  # For now, just build tests
+
+  deployment-test:
+    name: Deployment Test
+    runs-on: ubuntu-latest
+    needs: validate-flake
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'test-deployment'))
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Full Deployment Test
+        uses: ./
+        with:
+          flake-path: '.'
+          config-file: '.nix-runner.yaml'
+          test-timeout: '900'
+          skip-deployment: 'false'
+          target-host: ${{ secrets.TEST_HOST }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}

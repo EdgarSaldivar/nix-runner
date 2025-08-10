@@ -1,0 +1,48 @@
+# NixOS Flake Runner Configuration
+# This file configures how nix-runner tests your flake
+
+# Service-specific test configuration
+tests:
+  openssh:
+    enabled: true
+    port: 22
+    timeout: 30
+  
+  k3s:
+    enabled: true
+    timeout: 60
+    api_port: 6443
+  
+  docker:
+    enabled: true
+    timeout: 30
+    api_port: 2376
+  
+  nginx:
+    enabled: true
+    port: 80
+    timeout: 30
+
+# Deployment configuration
+deployment:
+  # Timeout for deployment operations (seconds)
+  timeout: 300
+  
+  # Whether to cleanup test resources after completion
+  cleanup: true
+
+# Test environment configuration
+environment:
+  # Use container-based testing when no target host is provided
+  use_containers: true
+  
+  # Container image to use for testing
+  container_image: "nixos/nix:latest"
+
+# Notification settings
+notifications:
+  # Enable GitHub status checks
+  github_status: true
+  
+  # Enable detailed reporting
+  detailed_reports: true
