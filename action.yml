@@ -43,9 +43,16 @@ runs:
   using: 'composite'
   steps:
     - name: Setup Nix
-      uses: cachix/install-nix-action@v22
+      uses: DeterminateSystems/nix-installer-action@main
       with:
-        nix_path: nixpkgs=channel:nixos-unstable
+        logger: pretty
+        log-directives: nix_installer=trace
+        backtrace: full
+        kvm: true
+        extra-conf: |
+          experimental-features = nix-command flakes
+          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+          substituters = https://cache.nixos.org/
 
     - name: Setup Nix Runner
       shell: bash
