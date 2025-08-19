@@ -31,25 +31,34 @@ detect_services() {
         echo "Found NixOS configurations:"
         cat /tmp/nix-runner/config_names.txt
         
+        # Create file for detected services (for generate-report.sh compatibility)
+        > "$GITHUB_WORKSPACE/detected_services.txt"
+        
         # For each configuration, try to detect services
         while IFS= read -r config_name; do
             echo "Analyzing configuration: $config_name"
             
             # Check individual services (avoids JSON serialization issues)
             services_to_check=("openssh" "k3s" "docker" "nginx")
+            detected_in_config=()
             
             for service in "${services_to_check[@]}"; do
                 if service_enabled=$(nix eval --json "path:$(realpath $flake_path)#nixosConfigurations.$config_name.config.services.$service.enable" 2>/dev/null); then
                     if [[ "$service_enabled" == "true" ]]; then
-                        echo "✓ Detected: $service"
+                        echo "✓ $config_name: $service"
+                        detected_in_config+=("$service")
                         jq --arg svc "$service" '.services += [$svc]' "$services_file" > /tmp/services.tmp && mv /tmp/services.tmp "$services_file"
-                    else
-                        echo "✗ $service: disabled"
+                        # Also write to simple text file for report generation
+                        echo "$service" >> "$GITHUB_WORKSPACE/detected_services.txt"
                     fi
-                else
-                    echo "? $service: not configured"
                 fi
             done
+            
+            if [ ${#detected_in_config[@]} -gt 0 ]; then
+                echo "  Services in $config_name: ${detected_in_config[*]}"
+            else
+                echo "  No services detected in $config_name"
+            fi
         done < /tmp/nix-runner/config_names.txt
     else
         echo "No NixOS configurations found, checking for packages..."

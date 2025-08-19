@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: your-username/nix-runner@v1
+      - uses: your-username/nix-runner@main  # Use @main for latest features
         with:
           flake-path: '.'
           skip-deployment: 'true'  # Only build tests for PRs

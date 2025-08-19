@@ -131,7 +131,24 @@ create_github_summary() {
         echo "Creating GitHub step summary..."
         
         local status=$(jq -r '.status' "$json_report")
-        local services=$(jq -r '.services_detected | join(", ")' "$json_report")
+        # Get unique services with counts for better display
+        local services_raw=""
+        if [ -f "$GITHUB_WORKSPACE/detected_services.txt" ]; then
+            local unique_services=$(sort "$GITHUB_WORKSPACE/detected_services.txt" | uniq)
+            local service_display=""
+            for service in $unique_services; do
+                local count=$(grep -c "^$service$" "$GITHUB_WORKSPACE/detected_services.txt")
+                if [ $count -gt 1 ]; then
+                    service_display="${service_display}$service (${count} configs), "
+                else
+                    service_display="${service_display}$service, "
+                fi
+            done
+            services_raw=$(echo "$service_display" | sed 's/, $//')
+        else
+            services_raw=$(jq -r '.services_detected | join(", ")' "$json_report")
+        fi
+        local services="$services_raw"
         local passed=$(jq -r '.summary.passed' "$json_report")
         local failed=$(jq -r '.summary.failed' "$json_report")
         
